@@ -35,7 +35,7 @@ public class SpringbootdemoApplication {
 			@Override
 			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
 				System.out.println("Executing Step");
-				return RepeatStatus.CONTINUABLE;
+				return RepeatStatus.FINISHED;
 			}
 		}).build();
 	}
