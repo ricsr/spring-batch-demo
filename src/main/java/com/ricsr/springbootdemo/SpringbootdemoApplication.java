@@ -26,7 +26,20 @@ public class SpringbootdemoApplication {
 
 	@Bean
 	public Job packageJob(){
-		return this.jobBuilderFactory.get("packageJob").start(packageStep()).build();
+		return this.jobBuilderFactory.get("packageJob").start(readOrderStep())
+				.next(packageStep())
+				.next(deliveryStep()).build();
+	}
+
+	@Bean
+	public Step readOrderStep() {
+		return this.stepBuilderFactory.get("packageStep").tasklet(new Tasklet() {
+			@Override
+			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+				System.out.println("Order Received");
+				return RepeatStatus.FINISHED;
+			}
+		}).build();
 	}
 
 	@Bean
@@ -34,7 +47,18 @@ public class SpringbootdemoApplication {
 		return this.stepBuilderFactory.get("packageStep").tasklet(new Tasklet() {
 			@Override
 			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-				System.out.println("Executing Step");
+				System.out.println("Packaging the gift");
+				return RepeatStatus.FINISHED;
+			}
+		}).build();
+	}
+
+	@Bean
+	public Step deliveryStep() {
+		return this.stepBuilderFactory.get("packageStep").tasklet(new Tasklet() {
+			@Override
+			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+				System.out.println("Package out for delivery");
 				return RepeatStatus.FINISHED;
 			}
 		}).build();
