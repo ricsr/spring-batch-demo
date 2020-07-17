@@ -26,14 +26,14 @@ public class SpringbootdemoApplication {
 
 	@Bean
 	public Job packageJob(){
-		return this.jobBuilderFactory.get("packageJob").start(readOrderStep())
+		return this.jobBuilderFactory.get("giftShopJob").start(readOrderStep())
 				.next(packageStep())
 				.next(deliveryStep()).build();
 	}
 
 	@Bean
 	public Step readOrderStep() {
-		return this.stepBuilderFactory.get("packageStep").tasklet(new Tasklet() {
+		return this.stepBuilderFactory.get("readOrderStep").tasklet(new Tasklet() {
 			@Override
 			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
 				System.out.println("Order Received");
@@ -55,7 +55,7 @@ public class SpringbootdemoApplication {
 
 	@Bean
 	public Step deliveryStep() {
-		return this.stepBuilderFactory.get("packageStep").tasklet(new Tasklet() {
+		return this.stepBuilderFactory.get("deliveryStep").tasklet(new Tasklet() {
 			@Override
 			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
 				System.out.println("Package out for delivery");
