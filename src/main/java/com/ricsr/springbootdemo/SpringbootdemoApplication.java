@@ -47,7 +47,8 @@ public class SpringbootdemoApplication {
 		return this.stepBuilderFactory.get("packageStep").tasklet(new Tasklet() {
 			@Override
 			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-				System.out.println("Packaging the gift");
+				String giftWrapper = chunkContext.getStepContext().getJobParameters().get("giftWrapper").toString();
+				System.out.println("Packaging the gift with " + giftWrapper);
 				return RepeatStatus.FINISHED;
 			}
 		}).build();
