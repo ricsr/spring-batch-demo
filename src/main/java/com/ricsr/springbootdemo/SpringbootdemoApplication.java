@@ -6,6 +6,7 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.job.flow.JobExecutionDecider;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
@@ -28,7 +29,14 @@ public class SpringbootdemoApplication {
 	public Job packageJob(){
 		return this.jobBuilderFactory.get("giftShopJob").start(readOrderStep())
 				.next(packageStep())
-				.next(deliveryStep()).build();
+					.on("FAILED").to(manualPackageStep())
+				.from(packageStep())
+					.on("*").to(pickupOrDeliveryDecider())
+						.on("DELIVER").to(deliveryStep())
+						.from(pickupOrDeliveryDecider())
+							.on("PICKUP").to(pickupStep())
+				.end()
+				.build();
 	}
 
 	@Bean
@@ -43,7 +51,7 @@ public class SpringbootdemoApplication {
 	}
 
 	// Toggle true/false to test rerunning failed jobs
-	private boolean throwException = true;
+	private boolean throwException = false;
 	@Bean
 	public Step packageStep() {
 		return this.stepBuilderFactory.get("packageStep").tasklet(new Tasklet() {
@@ -59,6 +67,17 @@ public class SpringbootdemoApplication {
 	}
 
 	@Bean
+	public Step manualPackageStep() {
+		return this.stepBuilderFactory.get("manualPackageStep").tasklet(new Tasklet() {
+			@Override
+			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+				System.out.println("Manually packaging the gift to be delivered");
+				return RepeatStatus.FINISHED;
+			}
+		}).build();
+	}
+
+	@Bean
 	public Step deliveryStep() {
 		return this.stepBuilderFactory.get("deliveryStep").tasklet(new Tasklet() {
 			@Override
@@ -67,6 +86,22 @@ public class SpringbootdemoApplication {
 				return RepeatStatus.FINISHED;
 			}
 		}).build();
+	}
+
+	@Bean
+	public Step pickupStep() {
+		return this.stepBuilderFactory.get("pickupStep").tasklet(new Tasklet() {
+			@Override
+			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+				System.out.println("Package ready for pickup");
+				return RepeatStatus.FINISHED;
+			}
+		}).build();
+	}
+
+	@Bean
+	public JobExecutionDecider pickupOrDeliveryDecider(){
+		return new PickupOrDeliveryDecider();
 	}
 
 	public static void main(String[] args) {
