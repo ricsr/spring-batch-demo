@@ -42,13 +42,17 @@ public class SpringbootdemoApplication {
 		}).build();
 	}
 
+	// Toggle true/false to test rerunning failed jobs
+	private boolean throwException = true;
 	@Bean
 	public Step packageStep() {
 		return this.stepBuilderFactory.get("packageStep").tasklet(new Tasklet() {
 			@Override
 			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-				String giftWrapper = chunkContext.getStepContext().getJobParameters().get("giftWrapper").toString();
-				System.out.println("Packaging the gift with " + giftWrapper);
+				if(throwException){
+					throw new RuntimeException("Exception while Packaging");
+				}
+				System.out.println("Packaging the gift");
 				return RepeatStatus.FINISHED;
 			}
 		}).build();
