@@ -29,7 +29,8 @@ public class SpringbootdemoApplication {
 	public Job packageJob(){
 		return this.jobBuilderFactory.get("giftShopJob").start(readOrderStep())
 				.next(packageStep())
-					.on("FAILED").to(manualPackageStep())
+					.on("FAILED").stop()
+					//.on("FAILED").fail()
 				.from(packageStep())
 					.on("*").to(pickupOrDeliveryDecider())
 						.on("DELIVER").to(deliveryStep())
