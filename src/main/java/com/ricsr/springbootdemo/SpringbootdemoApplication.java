@@ -3,6 +3,7 @@ package com.ricsr.springbootdemo;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
+import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
@@ -38,6 +39,54 @@ public class SpringbootdemoApplication {
 							.on("PICKUP").to(pickupStep())
 				.end()
 				.build();
+	}
+
+	@Bean
+	public Job orderChocolateBoxJob(){
+		return this.jobBuilderFactory.get("orderChocolateBoxJob")
+				.start(selectChocolatesStep())
+					.on("NUTTY_CHOCOLATES").to(addNoteStep()).next(arrangeChocolatesStep())
+				.from(selectChocolatesStep()).on("NORMAL_CHOCOLATES").to(arrangeChocolatesStep())
+				.end()
+				.build();
+	}
+
+	@Bean
+	public StepExecutionListener chocolateTypeStepExecutionListener(){
+		return new ChocolateTypeStepExecutionListener();
+	}
+
+	@Bean
+	public Step selectChocolatesStep(){
+		return this.stepBuilderFactory.get("selectChocolatesStep").tasklet(new Tasklet() {
+			@Override
+			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+				System.out.println("Ordering Chocolate : "+ chunkContext.getStepContext().getJobParameters().get("chocolateType").toString());
+				return RepeatStatus.FINISHED;
+			}
+		}).listener(chocolateTypeStepExecutionListener()).build();
+	}
+
+	@Bean
+	public Step arrangeChocolatesStep(){
+		return this.stepBuilderFactory.get("arrangeChocolatesStep").tasklet(new Tasklet() {
+			@Override
+			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+				System.out.println("Ordering Chocolate : "+ chunkContext.getStepContext().getJobParameters().get("chocolateType").toString());
+				return RepeatStatus.FINISHED;
+			}
+		}).build();
+	}
+
+	@Bean
+	public Step addNoteStep(){
+		return this.stepBuilderFactory.get("addNoteStep").tasklet(new Tasklet() {
+			@Override
+			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+				System.out.println("Chocolate box contains nuts");
+				return RepeatStatus.FINISHED;
+			}
+		}).build();
 	}
 
 	@Bean
