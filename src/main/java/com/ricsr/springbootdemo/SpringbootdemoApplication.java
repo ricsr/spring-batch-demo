@@ -1,5 +1,6 @@
 package com.ricsr.springbootdemo;
 
+import com.sun.tools.javac.util.Pair;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
@@ -7,14 +8,21 @@ import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.job.builder.FlowBuilder;
+import org.springframework.batch.core.job.flow.Flow;
+import org.springframework.batch.core.job.flow.FlowStep;
 import org.springframework.batch.core.job.flow.JobExecutionDecider;
+import org.springframework.batch.core.job.flow.support.SimpleFlow;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.*;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+
+import java.util.List;
 
 @SpringBootApplication
 @EnableBatchProcessing
@@ -26,17 +34,11 @@ public class SpringbootdemoApplication {
 	@Autowired
 	public StepBuilderFactory stepBuilderFactory;
 
+
 	@Bean
 	public Job packageJob(){
 		return this.jobBuilderFactory.get("giftShopJob").start(readOrderStep())
-				.next(packageStep())
-					.on("FAILED").stop()
-					//.on("FAILED").fail()
-				.from(packageStep())
-					.on("*").to(pickupOrDeliveryDecider())
-						.on("DELIVER").to(deliveryStep())
-						.from(pickupOrDeliveryDecider())
-							.on("PICKUP").to(pickupStep())
+				.on("*").to(packagingAndDeliveryFlow())
 				.end()
 				.build();
 	}
@@ -47,9 +49,23 @@ public class SpringbootdemoApplication {
 				.start(selectChocolatesStep())
 					.on("NUTTY_CHOCOLATES").to(addNoteStep()).next(arrangeChocolatesStep())
 				.from(selectChocolatesStep()).on("NORMAL_CHOCOLATES").to(arrangeChocolatesStep())
+				.from(arrangeChocolatesStep()).on("*").to(packagingAndDeliveryFlow())
 				.end()
 				.build();
 	}
+
+	@Bean
+	public Flow packagingAndDeliveryFlow(){
+		return new FlowBuilder<SimpleFlow>("packageAndDeliveryFlow").start(packageStep())
+				.on("FAILED").fail()
+				.from(packageStep())
+				.on("*").to(pickupOrDeliveryDecider())
+				.on("DELIVER").to(deliveryStep())
+				.from(pickupOrDeliveryDecider())
+				.on("PICKUP").to(pickupStep())
+				.build();
+	}
+
 
 	@Bean
 	public StepExecutionListener chocolateTypeStepExecutionListener(){

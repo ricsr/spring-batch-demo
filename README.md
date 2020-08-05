@@ -1,7 +1,7 @@
 # spring-batch-demo
 Helps to learn spring batch in an easy way
 
-Tutorial Link: http://ilearntthis.blogspot.com/2020/07/stepexecutionlistener-spring-batch-part.html
+Tutorial Link: https://ilearntthis.blogspot.com/2020/08/reusability-spring-batch-part-9.html
 
 
 You can checkout my tutorial of Spring Batch at https://ilearntthis.blogspot.com/search/label/spring-batch 
