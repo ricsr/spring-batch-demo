@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 
 import java.util.List;
 
@@ -34,11 +35,11 @@ public class SpringbootdemoApplication {
 	@Autowired
 	public StepBuilderFactory stepBuilderFactory;
 
-
 	@Bean
 	public Job packageJob(){
 		return this.jobBuilderFactory.get("giftShopJob").start(readOrderStep())
-				.on("*").to(packagingAndDeliveryFlow())
+				.split(new SimpleAsyncTaskExecutor())
+				.add(packagingAndDeliveryFlow(), updateGiftRepositoryFlow())
 				.end()
 				.build();
 	}
@@ -66,6 +67,48 @@ public class SpringbootdemoApplication {
 				.build();
 	}
 
+	@Bean
+	public Flow updateGiftRepositoryFlow(){
+		return new FlowBuilder<SimpleFlow>("updateGiftRepositoryFlow")
+				.start(checkGiftRepositoryStep())
+				.next(orderNewGiftsStep())
+				.next(giftRepositoryUpdatedStep())
+				.build();
+	}
+
+	@Bean
+	public Step checkGiftRepositoryStep(){
+		return this.stepBuilderFactory.get("updateGiftRepositoryStep").tasklet(new Tasklet() {
+			@Override
+			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+				System.out.println("Checking if Gift Repository is short of gifts");
+				System.out.println("Gift Repository is short of gifts");
+				return RepeatStatus.FINISHED;
+			}
+		}).build();
+	}
+
+	@Bean
+	public Step orderNewGiftsStep(){
+		return this.stepBuilderFactory.get("orderNewGiftsStep").tasklet(new Tasklet() {
+			@Override
+			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+				System.out.println("Ordering new gifts");
+				return RepeatStatus.FINISHED;
+			}
+		}).build();
+	}
+
+	@Bean
+	public Step giftRepositoryUpdatedStep(){
+		return this.stepBuilderFactory.get("giftRepositoryUpdatedStep").tasklet(new Tasklet() {
+			@Override
+			public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+				System.out.println("Gift Repository is full");
+				return RepeatStatus.FINISHED;
+			}
+		}).build();
+	}
 
 	@Bean
 	public StepExecutionListener chocolateTypeStepExecutionListener(){
